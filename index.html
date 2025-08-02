@@ -5,19 +5,220 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Advanced Audio Player</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f5f5f5;
-      }
-      .player-container {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
+              body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .playlist-sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        .playlist-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .playlist-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            cursor: pointer;
+            border-left: 3px solid #007bff;
+            transition: all 0.2s ease;
+        }
+        .playlist-item:hover {
+            background: #e7f3ff;
+            transform: translateX(5px);
+        }
+        .playlist-item.active {
+            background: #007bff;
+            color: white;
+        }
+        .playlist-item-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .playlist-item-size {
+            font-size: 12px;
+            color: #666;
+        }
+                .playlist-empty {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+        .player-container {
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 10px;
+            }
+            
+            .playlist-sidebar {
+                width: 100%;
+                order: 2;
+                margin-top: 15px;
+            }
+            
+            .player-container {
+                order: 1;
+                padding: 20px;
+            }
+            
+            .playlist-container {
+                max-height: 200px;
+            }
+            
+            .controls-section {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            
+            .control-group label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+            
+            input[type="number"] {
+                width: 100%;
+                max-width: 200px;
+            }
+            
+            button {
+                padding: 12px 16px;
+                font-size: 16px;
+                min-height: 44px; /* Touch-friendly button size */
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+                margin: 15px 0;
+            }
+            
+            .upload-icon {
+                font-size: 36px;
+            }
+            
+            .upload-content h3 {
+                font-size: 18px;
+            }
+            
+            .time-display {
+                font-size: 14px;
+                margin: 15px 0;
+            }
+            
+            #changeFileBtn {
+                margin-left: 10px;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .status {
+                margin-top: 15px;
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            
+            h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Extra small mobile devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-container {
+                gap: 10px;
+            }
+            
+            .player-container {
+                padding: 15px;
+            }
+            
+            .playlist-sidebar {
+                padding: 15px;
+            }
+            
+            .controls-section {
+                padding: 12px;
+                margin: 12px 0;
+            }
+            
+            .control-group {
+                gap: 6px;
+            }
+            
+            button {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+            
+            .upload-area {
+                padding: 25px 15px;
+            }
+            
+            .upload-icon {
+                font-size: 32px;
+            }
+            
+            .upload-content h3 {
+                font-size: 16px;
+            }
+            
+            .playlist-item {
+                padding: 12px;
+                margin: 8px 0;
+            }
+            
+            .playlist-item-title {
+                font-size: 14px;
+            }
+            
+            .playlist-item-size {
+                font-size: 11px;
+            }
+        }
       .audio-player {
         width: 100%;
         margin-bottom: 20px;
@@ -111,8 +312,16 @@
     </style>
   </head>
   <body>
-    <div class="player-container">
-      <h1>Advanced Audio Player</h1>
+        <div class="main-container">
+        <div class="playlist-sidebar">
+            <h3>📋 Playlist</h3>
+            <div class="playlist-container" id="playlistContainer">
+                <div class="playlist-empty">No files uploaded yet</div>
+            </div>
+        </div>
+        
+        <div class="player-container">
+            <h1>Advanced Audio Player</h1>
 
       <div class="upload-area" id="uploadArea">
         <div class="upload-content" id="uploadContent">
@@ -139,21 +348,13 @@
 
       <div class="time-display">
         <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
-      </div>
-
-      <!-- Rewind/Forward Controls -->
-      <div class="controls-section">
-        <h3>Rewind/Forward Controls</h3>
-        <div class="control-group">
-          <label for="rewindTime">Rewind Time (seconds):</label>
-          <input type="number" id="rewindTime" value="10" min="1" max="300" />
-          <button onclick="rewind()">⏪ Rewind</button>
-        </div>
-        <div class="control-group">
-          <label for="forwardTime">Forward Time (seconds):</label>
-          <input type="number" id="forwardTime" value="10" min="1" max="300" />
-          <button onclick="forward()">⏩ Forward</button>
-        </div>
+        <button
+          id="changeFileBtn"
+          onclick="showUploadArea()"
+          style="margin-left: 20px; padding: 5px 10px; font-size: 12px"
+        >
+          📁 Change File
+        </button>
       </div>
 
       <!-- Repeat Controls -->
@@ -181,6 +382,21 @@
         </div>
       </div>
 
+      <!-- Rewind/Forward Controls -->
+      <div class="controls-section">
+        <h3>Rewind/Forward Controls</h3>
+        <div class="control-group">
+          <label for="rewindTime">Rewind Time (seconds):</label>
+          <input type="number" id="rewindTime" value="10" min="1" max="300" />
+          <button onclick="rewind()">⏪ Rewind</button>
+        </div>
+        <div class="control-group">
+          <label for="forwardTime">Forward Time (seconds):</label>
+          <input type="number" id="forwardTime" value="10" min="1" max="300" />
+          <button onclick="forward()">⏩ Forward</button>
+        </div>
+      </div>
+
       <div class="status" id="status">Ready to play</div>
     </div>
 
@@ -191,9 +407,13 @@
       const statusDiv = document.getElementById("status");
       const startRepeatBtn = document.getElementById("startRepeatBtn");
       const stopRepeatBtn = document.getElementById("stopRepeatBtn");
-      const uploadArea = document.getElementById("uploadArea");
-      const uploadContent = document.getElementById("uploadContent");
-      const fileInput = document.getElementById("fileInput");
+              const uploadArea = document.getElementById("uploadArea");
+        const uploadContent = document.getElementById("uploadContent");
+        const fileInput = document.getElementById("fileInput");
+        const playlistContainer = document.getElementById("playlistContainer");
+
+        let playlist = [];
+        let currentFileIndex = -1;
 
       let repeatInterval = null;
       let repeatCount = 0;
@@ -318,27 +538,94 @@
         statusDiv.textContent = "Audio playback ended";
       });
 
-      // File handling functions
-      function handleFile(file) {
-        if (!file.type.startsWith("audio/")) {
-          statusDiv.textContent = "Error: Please select an audio file";
-          return;
+              // File handling functions
+        function handleFile(file) {
+            if (!file.type.startsWith("audio/")) {
+                statusDiv.textContent = "Error: Please select an audio file";
+                return;
+            }
+
+            // Add file to playlist if not already present
+            const fileIndex = playlist.findIndex(item => item.name === file.name && item.size === file.size);
+            if (fileIndex === -1) {
+                playlist.push({
+                    file: file,
+                    name: file.name,
+                    size: file.size,
+                    url: URL.createObjectURL(file)
+                });
+            }
+
+            // Load the file
+            loadFileFromPlaylist(playlist.length - 1);
         }
 
-        const url = URL.createObjectURL(file);
-        audio.src = url;
-        audio.load();
+        function loadFileFromPlaylist(index) {
+            if (index < 0 || index >= playlist.length) return;
 
-        // Show audio player and hide upload area
-        audio.style.display = "block";
-        uploadArea.style.display = "none";
+            const playlistItem = playlist[index];
+            audio.src = playlistItem.url;
+            audio.load();
 
-        statusDiv.textContent = `Loaded: ${file.name}`;
+            // Show audio player and hide upload area
+            audio.style.display = "block";
+            uploadArea.style.display = "none";
 
-        // Reset repeat controls
-        document.getElementById("repeatStart").value = "0";
-        document.getElementById("repeatEnd").value = "30";
-        document.getElementById("repeatCount").value = "3";
+            // Update current file index
+            currentFileIndex = index;
+
+            statusDiv.textContent = `Loaded: ${playlistItem.name}`;
+
+            // Reset repeat controls
+            document.getElementById("repeatStart").value = "0";
+            document.getElementById("repeatEnd").value = "30";
+            document.getElementById("repeatCount").value = "3";
+
+            // Update playlist display
+            updatePlaylistDisplay();
+        }
+
+        function updatePlaylistDisplay() {
+            if (playlist.length === 0) {
+                playlistContainer.innerHTML = '<div class="playlist-empty">No files uploaded yet</div>';
+                return;
+            }
+
+            playlistContainer.innerHTML = playlist.map((item, index) => `
+                <div class="playlist-item ${index === currentFileIndex ? 'active' : ''}" 
+                     onclick="loadFileFromPlaylist(${index})">
+                    <div class="playlist-item-title">${item.name}</div>
+                    <div class="playlist-item-size">${formatFileSize(item.size)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+      function showUploadArea() {
+        // Stop any ongoing repeat
+        stopRepeat();
+
+        // Reset audio
+        audio.pause();
+        audio.currentTime = 0;
+
+        // Show upload area and hide audio player
+        uploadArea.style.display = "block";
+        audio.style.display = "none";
+
+        // Clear status
+        statusDiv.textContent = "Ready to upload new file";
+
+        // Reset time display
+        currentTimeSpan.textContent = "00:00";
+        totalTimeSpan.textContent = "00:00";
       }
 
       // Drag and drop event listeners
@@ -373,8 +660,9 @@
         }
       });
 
-      // Initialize time display
-      updateTimeDisplay();
+              // Initialize time display and playlist
+        updateTimeDisplay();
+        updatePlaylistDisplay();
     </script>
   </body>
 </html>
