@@ -74,17 +74,66 @@
         font-size: 16px;
         margin: 10px 0;
       }
+      .upload-area {
+        border: 3px dashed #ccc;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        margin: 20px 0;
+        background-color: #fafafa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .upload-area:hover {
+        border-color: #007bff;
+        background-color: #f0f8ff;
+      }
+      .upload-area.dragover {
+        border-color: #007bff;
+        background-color: #e7f3ff;
+        transform: scale(1.02);
+      }
+      .upload-content {
+        pointer-events: none;
+      }
+      .upload-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+      }
+      .upload-content h3 {
+        margin: 10px 0;
+        color: #333;
+      }
+      .upload-content p {
+        color: #666;
+        margin: 5px 0;
+      }
     </style>
   </head>
   <body>
     <div class="player-container">
       <h1>Advanced Audio Player</h1>
 
-      <audio id="audioPlayer" class="audio-player" controls>
-        <source
-          src="file:///Users/xiaofei/Downloads/street_market_trimmed.m4a"
-          type="audio/x-m4a"
-        />
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-content" id="uploadContent">
+          <div class="upload-icon">🎵</div>
+          <h3>Drag & Drop Audio File Here</h3>
+          <p>or click to browse</p>
+          <input
+            type="file"
+            id="fileInput"
+            accept="audio/*"
+            style="display: none"
+          />
+        </div>
+      </div>
+
+      <audio
+        id="audioPlayer"
+        class="audio-player"
+        controls
+        style="display: none"
+      >
         Your browser does not support the audio element.
       </audio>
 
@@ -142,6 +191,9 @@
       const statusDiv = document.getElementById("status");
       const startRepeatBtn = document.getElementById("startRepeatBtn");
       const stopRepeatBtn = document.getElementById("stopRepeatBtn");
+      const uploadArea = document.getElementById("uploadArea");
+      const uploadContent = document.getElementById("uploadContent");
+      const fileInput = document.getElementById("fileInput");
 
       let repeatInterval = null;
       let repeatCount = 0;
@@ -218,6 +270,10 @@
         // Stop any existing repeat
         stopRepeat();
 
+        // Immediately jump to start time and start playing
+        audio.currentTime = startTime;
+        audio.play();
+
         currentRepeatCount = 0;
         repeatInterval = setInterval(() => {
           if (audio.currentTime >= endTime) {
@@ -239,7 +295,9 @@
         stopRepeatBtn.disabled = false;
         statusDiv.textContent = `Started repeating ${formatTime(
           startTime
-        )} to ${formatTime(endTime)} (${repeatCount} times)`;
+        )} to ${formatTime(
+          endTime
+        )} (${repeatCount} times) - jumped to ${formatTime(startTime)}`;
       }
 
       // Stop repeat function
@@ -258,6 +316,61 @@
       audio.addEventListener("loadedmetadata", updateTimeDisplay);
       audio.addEventListener("ended", () => {
         statusDiv.textContent = "Audio playback ended";
+      });
+
+      // File handling functions
+      function handleFile(file) {
+        if (!file.type.startsWith("audio/")) {
+          statusDiv.textContent = "Error: Please select an audio file";
+          return;
+        }
+
+        const url = URL.createObjectURL(file);
+        audio.src = url;
+        audio.load();
+
+        // Show audio player and hide upload area
+        audio.style.display = "block";
+        uploadArea.style.display = "none";
+
+        statusDiv.textContent = `Loaded: ${file.name}`;
+
+        // Reset repeat controls
+        document.getElementById("repeatStart").value = "0";
+        document.getElementById("repeatEnd").value = "30";
+        document.getElementById("repeatCount").value = "3";
+      }
+
+      // Drag and drop event listeners
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      });
+
+      // Click to browse
+      uploadArea.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
       });
 
       // Initialize time display
