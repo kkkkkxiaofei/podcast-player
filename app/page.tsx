@@ -18,6 +18,8 @@ export default function Home() {
   const [currentRepeatCount, setCurrentRepeatCount] = useState(0);
   const [status, setStatus] = useState("Ready to play");
   const [isDragging, setIsDragging] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isRepeating, setIsRepeating] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,9 +88,9 @@ export default function Home() {
         url: URL.createObjectURL(file),
       };
       setPlaylist((prev) => [...prev, newPlaylistItem]);
-      loadFileFromPlaylist(playlist.length);
+      setCurrentFileIndex(playlist.length);
     } else {
-      loadFileFromPlaylist(fileIndex);
+      setCurrentFileIndex(fileIndex);
     }
   };
 
@@ -97,9 +99,38 @@ export default function Home() {
     if (index < 0 || index >= playlist.length) return;
 
     const playlistItem = playlist[index];
+
     if (audioRef.current) {
       audioRef.current.src = playlistItem.url;
       audioRef.current.load();
+
+      // Add event listeners for debugging
+      const handleCanPlay = () => {
+        console.log("Audio can play - duration:", audioRef.current?.duration);
+        updateCustomProgress();
+        audioRef.current?.removeEventListener("canplay", handleCanPlay);
+      };
+
+      const handleLoadedMetadata = () => {
+        console.log(
+          "Audio metadata loaded - duration:",
+          audioRef.current?.duration
+        );
+        updateCustomProgress();
+        audioRef.current?.removeEventListener(
+          "loadedmetadata",
+          handleLoadedMetadata
+        );
+      };
+
+      const handleError = (e: Event) => {
+        console.error("Audio loading error:", e);
+        setStatus("Error loading audio file");
+      };
+
+      audioRef.current.addEventListener("canplay", handleCanPlay);
+      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioRef.current.addEventListener("error", handleError);
     }
 
     setCurrentFileIndex(index);
@@ -144,10 +175,20 @@ export default function Home() {
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (audioRef.current.paused) {
-        audioRef.current.play();
+        audioRef.current
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch((error) => {
+            setStatus("Error playing audio: " + error.message);
+          });
       } else {
         audioRef.current.pause();
+        setIsPlaying(false);
       }
+    } else {
+      setStatus("No audio file loaded");
     }
   };
 
@@ -305,26 +346,30 @@ export default function Home() {
     // Immediately jump to start time and start playing
     audioRef.current.currentTime = startTime;
     audioRef.current.play();
+    setIsPlaying(true);
+    setIsRepeating(true);
 
     setCurrentRepeatCount(0);
     const interval = setInterval(() => {
       if (!audioRef.current) return;
 
       if (audioRef.current.currentTime >= endTime) {
-        audioRef.current.currentTime = startTime;
         setCurrentRepeatCount((prev) => {
           const newCount = prev + 1;
           if (newCount >= repeatCount) {
             stopRepeat();
-            setStatus("Repeat completed");
+            setIsRepeating(false);
+            setStatus("Repeat completed - continuing playback");
+            return newCount;
           } else {
+            audioRef.current!.currentTime = startTime;
             setStatus(
               `Repeating ${newCount}/${repeatCount} - ${formatTime(
                 startTime
               )} to ${formatTime(endTime)}`
             );
+            return newCount;
           }
-          return newCount;
         });
       }
     }, 100);
@@ -342,6 +387,10 @@ export default function Home() {
     if (repeatInterval) {
       clearInterval(repeatInterval);
       setRepeatInterval(null);
+      setIsRepeating(false);
+      if (audioRef.current?.paused) {
+        setIsPlaying(false);
+      }
     }
     setStatus("Repeat stopped");
   };
@@ -437,11 +486,15 @@ export default function Home() {
 
   const handleEnded = () => {
     setStatus("Audio playback ended");
-    const playPauseBtn = document.getElementById(
-      "playPauseBtn"
-    ) as HTMLButtonElement;
-    if (playPauseBtn) playPauseBtn.innerHTML = "▶️ Play";
+    setIsPlaying(false);
   };
+
+  // Effect to load file when playlist or currentFileIndex changes
+  useEffect(() => {
+    if (currentFileIndex >= 0 && currentFileIndex < playlist.length) {
+      loadFileFromPlaylist(currentFileIndex);
+    }
+  }, [currentFileIndex, playlist]);
 
   // Add event listeners for time input formatting
   useEffect(() => {
@@ -534,6 +587,7 @@ export default function Home() {
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={handleEnded}
+          preload="metadata"
         >
           Your browser does not support the audio element.
         </audio>
@@ -569,7 +623,7 @@ export default function Home() {
                 cursor: "pointer",
               }}
             >
-              ▶️ Play
+              {isPlaying ? "⏸️ Pause" : "▶️ Play"}
             </button>
             <span id="customCurrentTime">00:00</span> /{" "}
             <span id="customTotalTime">00:00</span>
@@ -664,15 +718,32 @@ export default function Home() {
                 min="1"
                 max="1000"
               />
+              {isRepeating && (
+                <span
+                  style={{
+                    marginLeft: "10px",
+                    color: "#007bff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currentRepeatCount + 1}/
+                  {(document.getElementById("repeatCount") as HTMLInputElement)
+                    ?.value || "999"}
+                </span>
+              )}
             </div>
             <div className="control-group">
-              <button onClick={startRepeat} id="startRepeatBtn">
+              <button
+                onClick={startRepeat}
+                id="startRepeatBtn"
+                disabled={isRepeating}
+              >
                 ▶️ Start Repeat
               </button>
               <button
                 onClick={stopRepeat}
                 id="stopRepeatBtn"
-                disabled={!repeatInterval}
+                disabled={!isRepeating}
               >
                 ⏹️ Stop Repeat
               </button>
