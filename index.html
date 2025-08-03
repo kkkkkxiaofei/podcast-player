@@ -239,6 +239,39 @@
         width: 100%;
         margin-bottom: 20px;
       }
+      
+      /* Custom styling for audio progress bar */
+      #audioPlayer {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Make the audio controls more visible */
+      #audioPlayer::-webkit-media-controls {
+        background-color: #f8f9fa;
+      }
+      
+      #audioPlayer::-webkit-media-controls-panel {
+        background-color: #f8f9fa;
+      }
+      
+      #audioPlayer::-webkit-media-controls-timeline {
+        background-color: #e9ecef;
+        border-radius: 3px;
+        height: 8px;
+      }
+      
+      #audioPlayer::-webkit-media-controls-play-button {
+        background-color: #007bff;
+        border-radius: 50%;
+      }
+      
+      #audioPlayer::-webkit-media-controls-volume-slider {
+        background-color: #e9ecef;
+        border-radius: 3px;
+      }
       .controls-section {
         margin: 20px 0;
         padding: 20px;
@@ -290,6 +323,12 @@
         font-family: monospace;
         font-size: 16px;
         margin: 10px 0;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+        color: #333;
+        font-weight: bold;
       }
       .upload-area {
         border: 3px dashed #ccc;
@@ -356,14 +395,37 @@
       <audio
         id="audioPlayer"
         class="audio-player"
-        controls
         style="display: none"
       >
         Your browser does not support the audio element.
       </audio>
 
+      <!-- Custom Audio Controls -->
+      <div id="customControls" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <button id="playPauseBtn" onclick="togglePlayPause()" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            ▶️ Play
+          </button>
+          <span id="customCurrentTime">00:00</span> / <span id="customTotalTime">00:00</span>
+        </div>
+        <div style="position: relative; width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; cursor: pointer;" id="progressBar" onclick="seekToPosition(event)">
+          <div id="progressFill" style="position: absolute; left: 0; top: 0; height: 100%; background: #007bff; border-radius: 10px; width: 0%;"></div>
+        </div>
+      </div>
+
       <div class="time-display">
         <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+        <label for="playbackSpeed" style="margin-left: 20px; font-weight: bold;">Speed:</label>
+        <input 
+          type="number" 
+          id="playbackSpeed" 
+          value="1" 
+          min="0.25" 
+          max="4" 
+          step="0.25" 
+          style="width: 60px; margin-left: 5px; padding: 4px;"
+          onchange="updatePlaybackSpeed()"
+        />
         <button
           id="changeFileBtn"
           onclick="showUploadArea()"
@@ -379,16 +441,16 @@
         <div class="controls-section">
           <h3>Repeat Range Controls</h3>
           <div class="control-group">
-            <label for="repeatStart">Start Time (seconds):</label>
-            <input type="number" id="repeatStart" value="0" min="0" step="0.1" />
+            <label for="repeatStart">Start Time:</label>
+            <input type="text" id="repeatStart" value="00:00:00" placeholder="HH:MM:SS" />
           </div>
           <div class="control-group">
-            <label for="repeatEnd">End Time (seconds):</label>
-            <input type="number" id="repeatEnd" value="30" min="0" step="0.1" />
+            <label for="repeatEnd">End Time:</label>
+            <input type="text" id="repeatEnd" value="00:10:00" placeholder="HH:MM:SS" />
           </div>
           <div class="control-group">
             <label for="repeatCount">Repeat Count:</label>
-            <input type="number" id="repeatCount" value="3" min="1" max="100" />
+            <input type="number" id="repeatCount" value="999" min="1" max="1000" />
           </div>
           <div class="control-group">
             <button onclick="startRepeat()" id="startRepeatBtn">
@@ -405,12 +467,12 @@
           <h3>Rewind/Forward Controls</h3>
           <div class="control-group">
             <label for="rewindTime">Rewind Time (seconds):</label>
-            <input type="number" id="rewindTime" value="10" min="1" max="300" />
+            <input type="number" id="rewindTime" value="5" min="1" max="300" />
             <button onclick="rewind()">⏪ Rewind</button>
           </div>
           <div class="control-group">
             <label for="forwardTime">Forward Time (seconds):</label>
-            <input type="number" id="forwardTime" value="10" min="1" max="300" />
+            <input type="number" id="forwardTime" value="5" min="1" max="300" />
             <button onclick="forward()">⏩ Forward</button>
           </div>
         </div>
@@ -449,13 +511,36 @@
         }
       }
 
-      // Format time as MM:SS
+      // Format time as HH:MM:SS
       function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, "0")}:${secs
-          .toString()
-          .padStart(2, "0")}`;
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      // Convert HH:MM:SS to seconds
+      function timeToSeconds(timeString) {
+        const parts = timeString.split(':');
+        if (parts.length === 3) {
+          const hours = parseInt(parts[0]) || 0;
+          const minutes = parseInt(parts[1]) || 0;
+          const seconds = parseInt(parts[2]) || 0;
+          return hours * 3600 + minutes * 60 + seconds;
+        } else if (parts.length === 2) {
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseInt(parts[1]) || 0;
+          return minutes * 60 + seconds;
+        }
+        return 0;
+      }
+
+      // Convert seconds to HH:MM:SS
+      function secondsToTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
       }
 
       // Rewind function
@@ -463,11 +548,26 @@
         const rewindTime = parseInt(
           document.getElementById("rewindTime").value
         );
+        const originalTime = audio.currentTime;
         const newTime = Math.max(0, audio.currentTime - rewindTime);
         audio.currentTime = newTime;
-        statusDiv.textContent = `Rewound ${rewindTime} seconds to ${formatTime(
-          newTime
-        )}`;
+        
+        // Update repeat area times - start at new position, end at original position
+        document.getElementById("repeatStart").value = secondsToTime(newTime);
+        document.getElementById("repeatEnd").value = secondsToTime(originalTime);
+        
+        // If repeat is currently running, restart it with the new area
+        if (repeatInterval) {
+          stopRepeat();
+          startRepeat();
+          statusDiv.textContent = `Rewound ${rewindTime} seconds to ${formatTime(
+            newTime
+          )} - Repeat restarted with new area`;
+        } else {
+          statusDiv.textContent = `Rewound ${rewindTime} seconds to ${formatTime(
+            newTime
+          )} - Repeat area updated`;
+        }
       }
 
       // Forward function
@@ -475,22 +575,35 @@
         const forwardTime = parseInt(
           document.getElementById("forwardTime").value
         );
+        const originalTime = audio.currentTime;
         const newTime = Math.min(
           audio.duration,
           audio.currentTime + forwardTime
         );
         audio.currentTime = newTime;
-        statusDiv.textContent = `Forwarded ${forwardTime} seconds to ${formatTime(
-          newTime
-        )}`;
+        
+        // Update repeat area times - start at original position, end at new position
+        document.getElementById("repeatStart").value = secondsToTime(originalTime);
+        document.getElementById("repeatEnd").value = secondsToTime(newTime);
+        
+        // If repeat is currently running, restart it with the new area
+        if (repeatInterval) {
+          stopRepeat();
+          startRepeat();
+          statusDiv.textContent = `Forwarded ${forwardTime} seconds to ${formatTime(
+            newTime
+          )} - Repeat restarted with new area`;
+        } else {
+          statusDiv.textContent = `Forwarded ${forwardTime} seconds to ${formatTime(
+            newTime
+          )} - Repeat area updated`;
+        }
       }
 
       // Start repeat function
       function startRepeat() {
-        const startTime = parseFloat(
-          document.getElementById("repeatStart").value
-        );
-        const endTime = parseFloat(document.getElementById("repeatEnd").value);
+        const startTime = timeToSeconds(document.getElementById("repeatStart").value);
+        const endTime = timeToSeconds(document.getElementById("repeatEnd").value);
         const repeatCount = parseInt(
           document.getElementById("repeatCount").value
         );
@@ -551,10 +664,17 @@
       }
 
       // Event listeners
-      audio.addEventListener("timeupdate", updateTimeDisplay);
-      audio.addEventListener("loadedmetadata", updateTimeDisplay);
+      audio.addEventListener("timeupdate", () => {
+        updateTimeDisplay();
+        updateCustomProgress();
+      });
+      audio.addEventListener("loadedmetadata", () => {
+        updateTimeDisplay();
+        updateCustomProgress();
+      });
       audio.addEventListener("ended", () => {
         statusDiv.textContent = "Audio playback ended";
+        document.getElementById("playPauseBtn").innerHTML = "▶️ Play";
       });
 
               // File handling functions
@@ -586,8 +706,8 @@
             audio.src = playlistItem.url;
             audio.load();
 
-            // Show audio player and hide upload area
-            audio.style.display = "block";
+            // Show custom controls and hide upload area
+            document.getElementById("customControls").style.display = "block";
             uploadArea.style.display = "none";
 
             // Update current file index
@@ -596,9 +716,9 @@
             statusDiv.textContent = `Loaded: ${playlistItem.name}`;
 
             // Reset repeat controls
-            document.getElementById("repeatStart").value = "0";
-            document.getElementById("repeatEnd").value = "30";
-            document.getElementById("repeatCount").value = "3";
+            document.getElementById("repeatStart").value = "00:00:00";
+            document.getElementById("repeatEnd").value = "00:10:00";
+            document.getElementById("repeatCount").value = "999";
 
             // Update playlist display
             updatePlaylistDisplay();
@@ -635,9 +755,9 @@
         audio.pause();
         audio.currentTime = 0;
 
-        // Show upload area and hide audio player
+        // Show upload area and hide custom controls
         uploadArea.style.display = "block";
-        audio.style.display = "none";
+        document.getElementById("customControls").style.display = "none";
 
         // Clear status
         statusDiv.textContent = "Ready to upload new file";
@@ -679,9 +799,95 @@
         }
       });
 
-              // Initialize time display and playlist
-        updateTimeDisplay();
-        updatePlaylistDisplay();
+      // Update playback speed
+      function updatePlaybackSpeed() {
+        const speedInput = document.getElementById("playbackSpeed");
+        const speed = parseFloat(speedInput.value);
+        
+        if (speed >= 0.25 && speed <= 4) {
+          audio.playbackRate = speed;
+          statusDiv.textContent = `Playback speed set to ${speed}x`;
+        } else {
+          speedInput.value = 1;
+          audio.playbackRate = 1;
+          statusDiv.textContent = "Speed reset to 1x";
+        }
+      }
+
+      // Format time input on blur
+      function formatTimeInput(input) {
+        let value = input.value.trim();
+        
+        // Handle different input formats
+        if (value.includes(':')) {
+          const parts = value.split(':');
+          if (parts.length === 2) {
+            // MM:SS format
+            const mins = parseInt(parts[0]) || 0;
+            const secs = parseInt(parts[1]) || 0;
+            input.value = `00:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+          } else if (parts.length === 3) {
+            // HH:MM:SS format
+            const hours = parseInt(parts[0]) || 0;
+            const mins = parseInt(parts[1]) || 0;
+            const secs = parseInt(parts[2]) || 0;
+            input.value = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+          }
+        } else {
+          // Seconds format
+          const seconds = parseInt(value) || 0;
+          const hours = Math.floor(seconds / 3600);
+          const mins = Math.floor((seconds % 3600) / 60);
+          const secs = seconds % 60;
+          input.value = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+        }
+      }
+
+      // Add event listeners for time input formatting
+      document.addEventListener('DOMContentLoaded', function() {
+        const repeatStartInput = document.getElementById('repeatStart');
+        const repeatEndInput = document.getElementById('repeatEnd');
+        
+        repeatStartInput.addEventListener('blur', () => formatTimeInput(repeatStartInput));
+        repeatEndInput.addEventListener('blur', () => formatTimeInput(repeatEndInput));
+      });
+
+              // Custom audio control functions
+      function togglePlayPause() {
+        const playPauseBtn = document.getElementById("playPauseBtn");
+        if (audio.paused) {
+          audio.play();
+          playPauseBtn.innerHTML = "⏸️ Pause";
+        } else {
+          audio.pause();
+          playPauseBtn.innerHTML = "▶️ Play";
+        }
+      }
+
+      function seekToPosition(event) {
+        const progressBar = document.getElementById("progressBar");
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const percentage = clickX / rect.width;
+        audio.currentTime = percentage * audio.duration;
+      }
+
+      function updateCustomProgress() {
+        const progressFill = document.getElementById("progressFill");
+        const customCurrentTime = document.getElementById("customCurrentTime");
+        const customTotalTime = document.getElementById("customTotalTime");
+        
+        if (audio.duration) {
+          const percentage = (audio.currentTime / audio.duration) * 100;
+          progressFill.style.width = percentage + "%";
+          customCurrentTime.textContent = formatTime(audio.currentTime);
+          customTotalTime.textContent = formatTime(audio.duration);
+        }
+      }
+
+      // Initialize time display and playlist
+      updateTimeDisplay();
+      updatePlaylistDisplay();
     </script>
   </body>
 </html>
