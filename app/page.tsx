@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 
 interface PlaylistItem {
-  file: File;
+  file?: File;
   name: string;
   size: number;
   url: string;
+  isUrl?: boolean;
 }
 
 export default function Home() {
@@ -20,6 +21,10 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
+  const [urlInput, setUrlInput] = useState(
+    "https://dcs-spotify.megaphone.fm/xxx.mp3"
+  );
+  const [showUrlInput, setShowUrlInput] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +72,45 @@ export default function Home() {
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  // Handle URL input
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!urlInput.trim()) {
+      setStatus("Error: Please enter a valid URL");
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(urlInput);
+    } catch (e) {
+      setStatus("Error: Invalid URL format");
+      return;
+    }
+
+    // Just add the URL to playlist without loading
+    const newPlaylistItem: PlaylistItem = {
+      name: urlInput.split("/").pop() || "Audio from URL",
+      size: 0,
+      url: urlInput,
+      isUrl: true,
+    };
+
+    // Check if URL already exists in playlist
+    const urlIndex = playlist.findIndex((item) => item.url === urlInput);
+    if (urlIndex === -1) {
+      setPlaylist((prev) => [...prev, newPlaylistItem]);
+      setStatus(`Added "${newPlaylistItem.name}" to playlist`);
+    } else {
+      setStatus("This URL is already in your playlist");
+    }
+
+    // Clear input and hide form
+    setUrlInput("");
+    setShowUrlInput(false);
   };
 
   // Handle file upload
@@ -533,7 +577,70 @@ export default function Home() {
   return (
     <div className="main-container">
       <div className="playlist-sidebar">
-        <h3>📋 Playlist</h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "10px",
+          }}
+        >
+          <h3 style={{ margin: 0 }}>📋 Playlist</h3>
+          <button
+            onClick={() => setShowUrlInput(!showUrlInput)}
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            {showUrlInput ? "✕ Cancel" : "+ Add URL"}
+          </button>
+        </div>
+
+        {showUrlInput && (
+          <form
+            onSubmit={handleUrlSubmit}
+            style={{
+              marginBottom: "15px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
+            <input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Enter audio URL"
+              style={{
+                padding: "8px",
+                border: "2px solid #e0e0e0",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "8px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              ✓ Add to Playlist
+            </button>
+          </form>
+        )}
+
         <div className="playlist-container">
           {playlist.length === 0 ? (
             <div className="playlist-empty">No files uploaded yet</div>
