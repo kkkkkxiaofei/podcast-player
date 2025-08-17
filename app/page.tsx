@@ -167,7 +167,7 @@ export default function Home() {
 
     if (podcastData) {
       setSelectedPodcast(podcastData);
-      setShowConversation(true);
+      // Don't automatically show conversation - user can toggle it
     } else {
       // For URL-only entries, create a minimal podcast object
       setSelectedPodcast({
@@ -175,7 +175,7 @@ export default function Home() {
         conversation: undefined,
         vocabularies: undefined,
       });
-      setShowConversation(true);
+      // Don't automatically show conversation - user can toggle it
     }
 
     if (audioRef.current) {
@@ -789,6 +789,29 @@ export default function Home() {
             ></div>
           </div>
         </div>
+
+        {/* Conversation Toggle Button */}
+        {selectedPodcast && (
+          <div style={{ marginBottom: "15px", textAlign: "center" }}>
+            <button
+              onClick={() => setShowConversation(!showConversation)}
+              style={{
+                padding: "10px 20px",
+                background: showConversation ? "#6c757d" : "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              {showConversation
+                ? "👁️ Hide Conversation"
+                : "📝 Show Conversation"}
+            </button>
+          </div>
+        )}
 
         {/* Conversation Display */}
         <ConversationDisplay
