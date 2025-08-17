@@ -22,7 +22,7 @@ body {
 }
 
 .playlist-container {
-  max-height: 400px;
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
 }
 

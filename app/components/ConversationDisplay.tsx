@@ -2,8 +2,8 @@ import React from "react";
 import VocabularyDisplay from "./VocabularyDisplay";
 
 interface PodcastData {
-  title: string;
-  conversation: string;
+  title?: string;
+  conversation?: string;
   vocabularies?: string[];
 }
 
@@ -57,7 +57,9 @@ const ConversationDisplay: React.FC<ConversationDisplayProps> = ({
           marginBottom: "15px",
         }}
       >
-        <h3 style={{ margin: 0, color: "#333" }}>📝 {podcast.title}</h3>
+        <h3 style={{ margin: 0, color: "#333" }}>
+          📝 {podcast.title || "Audio File"}
+        </h3>
         <button
           onClick={onClose}
           style={{
@@ -74,39 +76,81 @@ const ConversationDisplay: React.FC<ConversationDisplayProps> = ({
         </button>
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
-        <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
-          💬 Conversation:
-        </h4>
-        <div
-          style={{
-            background: "white",
-            padding: "15px",
-            borderRadius: "5px",
-            border: "1px solid #e9ecef",
-            maxHeight: "200px",
-            overflowY: "auto",
-            fontSize: "14px",
-            lineHeight: "1.6",
-            color: "#333",
-          }}
-        >
-          {parseConversation(podcast.conversation).map(
-            ({ speaker, text, needBreak }, index) => {
-              return (
-                <div key={index}>
-                  {needBreak && <br />} <br />
-                  <strong>{speaker}:</strong>
-                  <span>{text}</span>
-                </div>
-              );
-            }
-          )}
+      {podcast.conversation ? (
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
+            💬 Conversation:
+          </h4>
+          <div
+            style={{
+              background: "white",
+              padding: "15px",
+              borderRadius: "5px",
+              border: "1px solid #e9ecef",
+              maxHeight: "200px",
+              overflowY: "auto",
+              fontSize: "14px",
+              lineHeight: "1.6",
+              color: "#333",
+            }}
+          >
+            {parseConversation(podcast.conversation).map(
+              ({ speaker, text, needBreak }, index) => {
+                return (
+                  <div key={index}>
+                    {needBreak && <br />} <br />
+                    <strong>{speaker}:</strong>
+                    <span>{text}</span>
+                  </div>
+                );
+              }
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
+            💬 Conversation:
+          </h4>
+          <div
+            style={{
+              background: "white",
+              padding: "15px",
+              borderRadius: "5px",
+              border: "1px solid #e9ecef",
+              fontSize: "14px",
+              lineHeight: "1.6",
+              color: "#666",
+              fontStyle: "italic",
+            }}
+          >
+            No conversation transcript available for this audio file.
+          </div>
+        </div>
+      )}
 
-      {podcast.vocabularies && podcast.vocabularies.length > 0 && (
+      {podcast.vocabularies && podcast.vocabularies.length > 0 ? (
         <VocabularyDisplay vocabularies={podcast.vocabularies} />
+      ) : (
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
+            📚 Key Vocabulary:
+          </h4>
+          <div
+            style={{
+              background: "white",
+              padding: "15px",
+              borderRadius: "5px",
+              border: "1px solid #e9ecef",
+              fontSize: "13px",
+              lineHeight: "1.5",
+              color: "#666",
+              fontStyle: "italic",
+            }}
+          >
+            No vocabulary list available for this audio file.
+          </div>
+        </div>
       )}
     </div>
   );

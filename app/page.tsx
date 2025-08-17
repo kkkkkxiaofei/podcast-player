@@ -108,7 +108,7 @@ export default function Home() {
 
     // Just add the URL to playlist without loading
     const newPlaylistItem: PlaylistItem = {
-      name: urlInput.split("/").pop() || "Audio from URL",
+      name: "Untitled",
       size: 0,
       url: urlInput,
     };
@@ -116,7 +116,7 @@ export default function Home() {
     // Check if URL already exists in playlist
     const urlIndex = playlist.findIndex((item) => item.url === urlInput);
     if (urlIndex === -1) {
-      setPlaylist((prev) => [...prev, newPlaylistItem]);
+      setPlaylist((prev) => [newPlaylistItem, ...prev]);
       setStatus(`Added "${newPlaylistItem.name}" to playlist`);
     } else {
       setStatus("This URL is already in your playlist");
@@ -167,6 +167,14 @@ export default function Home() {
 
     if (podcastData) {
       setSelectedPodcast(podcastData);
+      setShowConversation(true);
+    } else {
+      // For URL-only entries, create a minimal podcast object
+      setSelectedPodcast({
+        title: playlistItem.name,
+        conversation: undefined,
+        vocabularies: undefined,
+      });
       setShowConversation(true);
     }
 
@@ -667,7 +675,7 @@ export default function Home() {
           ) : (
             playlist.map((item, index) => (
               <div
-                key={index}
+                key={index + item.name}
                 className={`playlist-item ${
                   index === currentFileIndex ? "active" : ""
                 }`}
