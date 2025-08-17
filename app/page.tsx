@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import PODCASTS from "./constant";
 
 interface PlaylistItem {
   file?: File;
@@ -10,8 +11,19 @@ interface PlaylistItem {
   isUrl?: boolean;
 }
 
+// Initial playlist from constants
+const initialPlaylist: PlaylistItem[] = PODCASTS.map((podcast) => ({
+  name: podcast.title,
+  size: 0,
+  url:
+    `https://dcs-spotify.megaphone.fm/${
+      podcast.audio_src?.match(/e=([^&]+)/)?.[1]
+    }.mp3` || "",
+  isUrl: true,
+})).filter((podcast) => podcast.url); // Only include podcasts with valid audio URLs
+
 export default function Home() {
-  const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>(initialPlaylist);
   const [currentFileIndex, setCurrentFileIndex] = useState(-1);
   const [repeatInterval, setRepeatInterval] = useState<NodeJS.Timeout | null>(
     null
@@ -96,7 +108,6 @@ export default function Home() {
       name: urlInput.split("/").pop() || "Audio from URL",
       size: 0,
       url: urlInput,
-      isUrl: true,
     };
 
     // Check if URL already exists in playlist
@@ -672,7 +683,7 @@ export default function Home() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleUploadClick}
-          style={{ display: playlist.length === 0 ? "block" : "none" }}
+          style={{ display: "none" }}
         >
           <div className="upload-content">
             <div className="upload-icon">🎵</div>
@@ -703,7 +714,7 @@ export default function Home() {
         <div
           id="customControls"
           style={{
-            display: playlist.length === 0 ? "none" : "block",
+            display: "block",
             background: "#f8f9fa",
             padding: "15px",
             borderRadius: "8px",
