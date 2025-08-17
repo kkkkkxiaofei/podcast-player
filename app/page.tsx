@@ -40,6 +40,12 @@ export default function Home() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [showConversation, setShowConversation] = useState(false);
   const [selectedPodcast, setSelectedPodcast] = useState<any>(null);
+  const [repeatStartTime, setRepeatStartTime] = useState("00:00:00");
+  const [repeatEndTime, setRepeatEndTime] = useState("00:10:00");
+  const [repeatCount, setRepeatCount] = useState(999);
+  const [rewindTime, setRewindTime] = useState(5);
+  const [forwardTime, setForwardTime] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +164,10 @@ export default function Home() {
 
     const playlistItem = playlist[index];
 
+    // Set loading state
+    setIsLoading(true);
+    setStatus("Loading audio file...");
+
     // Find the corresponding podcast data
     const podcastData = PODCASTS.find(
       (podcast) =>
@@ -182,9 +192,11 @@ export default function Home() {
       audioRef.current.src = playlistItem.url;
       audioRef.current.load();
 
-      // Add event listeners for debugging
+      // Add event listeners for loading states
       const handleCanPlay = () => {
+        setIsLoading(false);
         updateCustomProgress();
+        setStatus(`Loaded: ${playlistItem.name}`);
         audioRef.current?.removeEventListener("canplay", handleCanPlay);
       };
 
@@ -197,6 +209,7 @@ export default function Home() {
       };
 
       const handleError = (e: Event) => {
+        setIsLoading(false);
         setStatus("Error loading audio file");
       };
 
@@ -245,6 +258,11 @@ export default function Home() {
 
   // Toggle play/pause
   const togglePlayPause = () => {
+    if (isLoading) {
+      setStatus("Please wait, audio is still loading...");
+      return;
+    }
+
     if (audioRef.current) {
       if (audioRef.current.paused) {
         audioRef.current
@@ -749,17 +767,43 @@ export default function Home() {
             <button
               id="playPauseBtn"
               onClick={togglePlayPause}
+              disabled={isLoading}
               style={{
                 padding: "8px 12px",
-                background: "#007bff",
+                background: isLoading ? "#6c757d" : "#007bff",
                 color: "white",
                 border: "none",
                 borderRadius: "4px",
-                cursor: "pointer",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.7 : 1,
               }}
             >
-              {isPlaying ? "⏸️ Pause" : "▶️ Play"}
+              {isLoading ? "⏳ Loading..." : isPlaying ? "⏸️ Pause" : "▶️ Play"}
             </button>
+            {isLoading && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  color: "#007bff",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid #007bff",
+                    borderTop: "2px solid transparent",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                Loading...
+              </div>
+            )}
             <span id="customCurrentTime">00:00</span> /{" "}
             <span id="customTotalTime">00:00</span>
           </div>
