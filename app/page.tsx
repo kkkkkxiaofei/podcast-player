@@ -37,6 +37,8 @@ export default function Home() {
     "https://dcs-spotify.megaphone.fm/xxx.mp3"
   );
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [showConversation, setShowConversation] = useState(false);
+  const [selectedPodcast, setSelectedPodcast] = useState<any>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -155,22 +157,29 @@ export default function Home() {
 
     const playlistItem = playlist[index];
 
+    // Find the corresponding podcast data
+    const podcastData = PODCASTS.find(
+      (podcast) =>
+        podcast.audio_src?.match(/e=([^&]+)/)?.[1] ===
+        playlistItem.url?.match(/([^\/]+)\.mp3$/)?.[1]
+    );
+
+    if (podcastData) {
+      setSelectedPodcast(podcastData);
+      setShowConversation(true);
+    }
+
     if (audioRef.current) {
       audioRef.current.src = playlistItem.url;
       audioRef.current.load();
 
       // Add event listeners for debugging
       const handleCanPlay = () => {
-        console.log("Audio can play - duration:", audioRef.current?.duration);
         updateCustomProgress();
         audioRef.current?.removeEventListener("canplay", handleCanPlay);
       };
 
       const handleLoadedMetadata = () => {
-        console.log(
-          "Audio metadata loaded - duration:",
-          audioRef.current?.duration
-        );
         updateCustomProgress();
         audioRef.current?.removeEventListener(
           "loadedmetadata",
@@ -179,7 +188,6 @@ export default function Home() {
       };
 
       const handleError = (e: Event) => {
-        console.error("Audio loading error:", e);
         setStatus("Error loading audio file");
       };
 
@@ -772,6 +780,104 @@ export default function Home() {
             ></div>
           </div>
         </div>
+
+        {/* Conversation Display */}
+        {showConversation && selectedPodcast && (
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              border: "1px solid #dee2e6",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "15px",
+              }}
+            >
+              <h3 style={{ margin: 0, color: "#333" }}>
+                📝 {selectedPodcast.title}
+              </h3>
+              <button
+                onClick={() => setShowConversation(false)}
+                style={{
+                  padding: "5px 10px",
+                  background: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div style={{ marginBottom: "15px" }}>
+              <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
+                💬 Conversation:
+              </h4>
+              <div
+                style={{
+                  background: "white",
+                  padding: "15px",
+                  borderRadius: "5px",
+                  border: "1px solid #e9ecef",
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  color: "#333",
+                }}
+              >
+                {selectedPodcast.conversation}
+              </div>
+            </div>
+
+            {selectedPodcast.vocabularies &&
+              selectedPodcast.vocabularies.length > 0 && (
+                <div>
+                  <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>
+                    📚 Key Vocabulary:
+                  </h4>
+                  <div
+                    style={{
+                      background: "white",
+                      padding: "15px",
+                      borderRadius: "5px",
+                      border: "1px solid #e9ecef",
+                      maxHeight: "150px",
+                      overflowY: "auto",
+                      fontSize: "13px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {selectedPodcast.vocabularies.map(
+                      (vocab: string, index: number) => (
+                        <div
+                          key={index}
+                          style={{
+                            marginBottom: "8px",
+                            padding: "5px",
+                            background: "#f8f9fa",
+                            borderRadius: "3px",
+                          }}
+                        >
+                          {vocab}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+          </div>
+        )}
 
         <div className="time-display">
           <span id="currentTime">00:00</span> /{" "}
