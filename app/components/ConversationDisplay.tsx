@@ -13,6 +13,23 @@ interface ConversationDisplayProps {
   onClose: () => void;
 }
 
+const parseConversation = (rawConversation: string) => {
+  return rawConversation
+    .replaceAll("Maria:", "__divider__")
+    .replaceAll("Rory:", "__divider__")
+    .replaceAll("M:", "__divider__")
+    .replaceAll("R:", "__divider__")
+    .split("__divider__")
+    .filter(Boolean)
+    .map((part: string, index: number) => {
+      return {
+        speaker: index % 2 === 0 ? "Maria" : "Rory",
+        text: part,
+        needBreak: index !== 0 && index % 2 === 0,
+      };
+    });
+};
+
 const ConversationDisplay: React.FC<ConversationDisplayProps> = ({
   podcast,
   isVisible,
@@ -74,7 +91,17 @@ const ConversationDisplay: React.FC<ConversationDisplayProps> = ({
             color: "#333",
           }}
         >
-          {podcast.conversation}
+          {parseConversation(podcast.conversation).map(
+            ({ speaker, text, needBreak }, index) => {
+              return (
+                <div key={index}>
+                  {needBreak && <br />} <br />
+                  <strong>{speaker}:</strong>
+                  <span>{text}</span>
+                </div>
+              );
+            }
+          )}
         </div>
       </div>
 

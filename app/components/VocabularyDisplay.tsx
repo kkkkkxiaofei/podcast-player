@@ -4,6 +4,16 @@ interface VocabularyDisplayProps {
   vocabularies: string[];
 }
 
+const parseVocabularies = (rawVocabularies: string[]) => {
+  return rawVocabularies.map((vocab) => {
+    const [word, definition] = vocab.split(" - ");
+    return {
+      word,
+      definition,
+    };
+  });
+};
+
 const VocabularyDisplay: React.FC<VocabularyDisplayProps> = ({
   vocabularies,
 }) => {
@@ -28,19 +38,22 @@ const VocabularyDisplay: React.FC<VocabularyDisplayProps> = ({
           lineHeight: "1.5",
         }}
       >
-        {vocabularies.map((vocab: string, index: number) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "8px",
-              padding: "5px",
-              background: "#f8f9fa",
-              borderRadius: "3px",
-            }}
-          >
-            {vocab}
-          </div>
-        ))}
+        {parseVocabularies(vocabularies).map(
+          ({ word, definition }, index: number) => (
+            <div
+              key={index}
+              style={{
+                marginBottom: "8px",
+                padding: "5px",
+                background: "#f8f9fa",
+                borderRadius: "3px",
+              }}
+            >
+              <strong>{word}</strong>
+              {definition && <span> - {definition}</span>}
+            </div>
+          )
+        )}
       </div>
     </div>
   );
